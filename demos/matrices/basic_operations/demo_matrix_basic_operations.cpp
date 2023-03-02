@@ -92,7 +92,7 @@ void rotate(Real *input_vector,
 
 int main(int argc, char *argv[])
 {
- // Initialise chapcom
+ // Initialise scicellxx
  initialise_scicellxx();
  
  // Output for testing/validation

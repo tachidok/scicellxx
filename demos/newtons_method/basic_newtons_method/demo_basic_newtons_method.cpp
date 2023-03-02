@@ -110,7 +110,7 @@ private:
 // ==================================================================
 int main(int argc, char *argv[])
 {
- // Initialise chapcom
+ // Initialise scicellxx
  initialise_scicellxx();
  
  // Output for testing/validation
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
  
  std::cout << "[FINISHING UP] ... " << std::endl;
  
- // Finalise chapcom
+ // Finalise scicellxx
  finalise_scicellxx();
  
  return 0;

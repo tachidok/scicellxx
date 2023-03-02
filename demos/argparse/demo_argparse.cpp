@@ -46,7 +46,7 @@ struct Args {
 
 int main(int argc, const char** argv)
 {
- // Initialise chapcom
+ // Initialise scicellxx
  initialise_scicellxx();
  
  // Output for testing/validation
@@ -112,7 +112,7 @@ int main(int argc, const char** argv)
  // Close the output for test
  output_test.close();
   
- // Finalise chapcom
+ // Finalise scicellxx
  finalise_scicellxx();
  
  return 0;
