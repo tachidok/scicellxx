@@ -141,6 +141,7 @@ IF (SCICELLXX_USES_MPI)
       MESSAGE( STATUS "FOUND MPI_CXX_INCLUDE_DIRS:             " ${MPI_CXX_INCLUDE_DIRS} )
       MESSAGE( STATUS "FOUND MPI_CXX_LIBRARIES:                " ${MPI_CXX_LIBRARIES} )
 #      INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIRS}) it seems this is not required due to CMake version 3.9+
+      INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_DIRS})
       INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_DIRS})
     ENDIF (MPI_FOUND)
   ELSE (SCICELLXX_AUTO_FIND_MPI_PATHS)
@@ -150,6 +151,7 @@ IF (SCICELLXX_USES_MPI)
     MESSAGE( STATUS "MPI_CXX_INCLUDE_DIRS:             " ${MPI_CXX_INCLUDE_DIRS} )
     MESSAGE( STATUS "MPI_CXX_LIBRARIES:                " ${MPI_CXX_LIBRARIES} )
 #    INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIRS}) it seems this is not required due to CMake version 3.9+
+    INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_DIRS})
     INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_DIRS})
   ENDIF (SCICELLXX_AUTO_FIND_MPI_PATHS)
   
@@ -364,6 +366,11 @@ ENDIF (SCICELLXX_USES_VTK)
 # This is required for non-mpi demos to compile, otherwise they throw
 #  an error regarding "undefined reference to `MPI_Init` and
 #  `MPI_Finalize`"
+IF (SCICELLXX_USES_MPI)
+  LIST(APPEND LIB_scicellxx_lib MPI::MPI_CXX)
+ENDIF (SCICELLXX_USES_MPI)
+
+# Check whether scicellxx is using MPI
 IF (SCICELLXX_USES_MPI)
   LIST(APPEND LIB_scicellxx_lib MPI::MPI_CXX)
 ENDIF (SCICELLXX_USES_MPI)

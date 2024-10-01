@@ -14,13 +14,13 @@ This script builds [and runs the test suite of] SciCell++
 
 OPTIONS:
    -h      Show this message
-   -t      Indicates to generate a 'STATIC' or 'SHARED' version of library files
-   -b      Build version 'DEBUG' or 'RELEASE'
-   -c      Configuration file for additional building tools
-   -n      Number of processors to build the framework
-   -d      Number of processors to run demos (set to '0' to skip demos testing)
-   -i      Interative mode, launches the interactive mode to prompt for FULL configuration options (any other parameters are ignored)
-   -r      Generate code coverage report
+   -t      Indicates to generate a 'STATIC' or 'SHARED' version of library files [default STATIC]
+   -b      Build version 'DEBUG' or 'RELEASE' [default RELEASE]
+   -c      Configuration file for additional building tools [default ./configs/current]
+   -n      Number of processors to build the framework [default 4]
+   -d      Number of processors to run demos (set to '0' to skip demos testing) [default 4]
+   -i      Interative mode, launches the interactive mode to prompt for FULL configuration options [any other parameters are ignored]
+   -r      Generate code coverage report [no longer supported, use ./tools/experimental/run_codecov.sh]
    -v      Verbose
 EOF
 }
@@ -60,7 +60,7 @@ lib_name=SciCell++
 lib_type=STATIC
 # The version of the library is given by whether the user choose to
 # build the DEBUG or the RELEASE version of the library
-lib_build=DEBUG
+lib_build=RELEASE
 # Indicates the configuration file with variables for paths for
 # external libraries
 configuration_file=./configs/current

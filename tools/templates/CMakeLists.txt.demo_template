@@ -9,7 +9,7 @@ ELSE(${SCICELLXX_BUILD_DEMOS} STREQUAL TRUE)
 ENDIF(${SCICELLXX_BUILD_DEMOS} STREQUAL TRUE)
 
 # Indicate linking libraries
-SET(LIB_demo_john general_lib problem_lib)
+SET(LIB_demo_john ${LIB_scicellxx_lib})
 
 # ... and link againts them
 TARGET_LINK_LIBRARIES(demo_john ${LIB_demo_john})

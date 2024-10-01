@@ -911,7 +911,7 @@ int main(int argc, char *argv[])
 
 #endif // #if 0
  
- // Finalise chapcom
+ // Finalise scicellxx
  finalise_scicellxx();
  
  return 0;

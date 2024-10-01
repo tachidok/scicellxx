@@ -97,7 +97,7 @@ protected:
 int main(int argc, char *argv[])
 {
  
- // Initialise chapcom
+ // Initialise scicellxx
  initialise_scicellxx();
  
  // Create the factory for the time steppers (integration methods)

@@ -1403,7 +1403,7 @@ int main(int argc, const char** argv)
     
    } // if (SciCellxxMPI::rank == SciCellxxMPI::master_core)
   
-  // Finalise chapcom
+  // Finalise scicellxx
   finalise_scicellxx();
   
   return 0;

@@ -14,7 +14,12 @@ SET(LIB_demo_mTASEP_LK ${LIB_scicellxx_lib})
 # when linking a target use the following (supported in CMake 3.9+)
 #target_link_libraries(MyTarget PUBLIC MPI::MPI_CXX)
 
-TARGET_LINK_LIBRARIES(julio_demo_mTASEP_LK PUBLIC ${LIB_demo_mTASEP_LK} MPI::MPI_CXX)
+#TARGET_LINK_LIBRARIES(julio_demo_mTASEP_LK PUBLIC ${LIB_demo_mTASEP_LK} MPI::MPI_CXX)
+
+# Use the below line since the MPI libraries are included in the
+# CMakeLists.txt file in the root folder after checking whether MPI is
+# required
+TARGET_LINK_LIBRARIES(julio_demo_mTASEP_LK PUBLIC ${LIB_demo_mTASEP_LK})
 
 # Check if the output/bin directory exists
 IF(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bin)
