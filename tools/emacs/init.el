@@ -10,7 +10,9 @@
 (require 'package)
 (setq package-enable-at-startup nil)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-;(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
+                                        ;(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
+(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
+(add-to-list 'package-archives '("elpa" . "https://elpa.gnu.org/packages/"))
 ;;; Initialise packages
 (package-initialize)
 ;;; Refresh the content of the package at startup
@@ -37,6 +39,11 @@
   :config
   (which-key-mode)
   (message "which-key ... [DONE]"))
+
+;; (use-package doom-modeline
+;;   :ensure t
+;;   :init (doom-modeline-mode 1)
+;;   (message "doom-modeline-mode ... [DONE]"))
 
 ;;; Move through windows using C-x o and then hit the "window number"
 ;;; you want to move on
@@ -277,8 +284,9 @@
   (message "company-c-headers ... [DONE]"))
 
 ;;; Company mode (complete anything mode)
+;;; Disabled due to large delay on response time
 (use-package company
-;  :disabled ; default [enabled]
+  :disabled ; default [enabled]
   :ensure t
   :config
   (add-hook 'after-init-hook 'global-company-mode)
@@ -295,8 +303,9 @@
   (message "company ... [DONE]"))
 
 ;;; Irony for code completion
+;;; Disabled due to large delay on response time
 (use-package irony
-;  :disabled ; default [enabled]
+  :disabled ; default [enabled]
   :ensure t
   :config
   (add-hook 'c++-mode-hook 'irony-mode)
@@ -387,13 +396,17 @@
 
 ;;; Enable semantic
 ;;;(require 'cc-mode)
+;;; Disabled due lo large delay on response time
 (use-package cc-mode
+  :disabled ; default [enabled]
   :ensure t
   :config
   (message "cc-mode ... [DONE]"))
 
 ;;;(require 'semantic)
+;;; Disabled due lo large delay on response time
 (use-package semantic
+  :disabled ; default [enabled]
   :ensure t
   :config
   (global-semanticdb-minor-mode 1)
@@ -438,6 +451,11 @@
 ;;; the first argument (in case the word inhibit-startup-message)
 (setq inhibit-startup-message t)
 
+;; Set up visible bell
+(setq visible-bell t)
+
+;;(set-face-attribute 'default nil :font "Fira Code Retina" :heigh 280)
+
 ;;; Display line numbers
 (global-linum-mode t)
 
@@ -446,6 +464,8 @@
 
 ;;; Load the prefered theme
 (load-theme 'tsdh-dark)
+;;(load-theme 'tsdh-light)
+;;(load-theme 'tango-dark)
 
 ;;; Highlight current line
 (global-hl-line-mode t)
@@ -529,7 +549,7 @@
  '(mouse-wheel-progressive-speed nil)
  '(mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control))))
  '(package-selected-packages
-   '(julia-mode company-auctex gnuplot try web-mode git-timemachine elpy cmake-font-lock cmake-mode iedit expand-region company-c-headers company-irony dumb-jump ggtags markdown-mode counsel-projectile projectile auctex magit counsel undo-tree org-bullets ace-window which-key use-package))
+   '(doom-modeline julia-mode company-auctex gnuplot try web-mode git-timemachine elpy cmake-font-lock cmake-mode iedit expand-region company-c-headers company-irony dumb-jump ggtags markdown-mode counsel-projectile projectile auctex magit counsel undo-tree org-bullets ace-window which-key use-package))
  '(text-mode-hook '(turn-on-auto-fill text-mode-hook-identify)))
 
 (custom-set-faces
