@@ -45,7 +45,11 @@ namespace scicellxx
   : Dimension(dimension), N_variables(n_variables),
     N_history_values(n_history_values), X(Dimension, N_history_values),
     U(N_variables, N_history_values)
- { }
+ {
+  // Resize the equaiton number vector to keep track of the equation
+  // number in the problem
+  Equation_number.resize(N_variables);
+ }
  
  /// ===================================================================
  /// Empty destructor
@@ -82,8 +86,8 @@ namespace scicellxx
  /// position)
  /// ===================================================================
  void CCNode::output(std::ofstream &outfile,
-                        bool output_position,
-                        const unsigned t) const
+                     bool output_position,
+                     const unsigned t) const
  {
   // Check whether we should output positions
   if (output_position)

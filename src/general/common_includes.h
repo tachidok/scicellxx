@@ -32,12 +32,23 @@
 #ifndef COMMON_INCLUDES_H
 #define COMMON_INCLUDES_H
 
+
+// C headers
+
+// ====================================================================
+// Utilities libraries
+// ====================================================================
+#include <sys/types.h> // Folder creation
+#include <sys/stat.h> // Folder creation
+
 // ====================================================================
 // Check this page for more information about the included libraries
 // 
 // http://en.cppreference.com/w/cpp/header
 // 
 // ====================================================================
+
+// C++ headers
 
 // ====================================================================
 // Utilities library
@@ -105,6 +116,11 @@
 
 // Include ArgParse
 #include "../../external_src/argparse/src/argparse.hpp"
+
+// MPI support
+#ifdef SCICELLXX_USES_MPI
+#include <mpi.h>
+#endif // #ifdef SCICELLXX_USES_MPI
 
 // Own scicellxx definitions
 #include "definitions.h"

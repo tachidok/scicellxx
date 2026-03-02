@@ -132,6 +132,14 @@ namespace scicellxx
   virtual void output(std::ofstream &outfile,
                       bool output_position = false,
                       const unsigned t = 0) const;
+
+  /// Write-access assign an equation number to an specific variable in
+  /// in the node
+  inline unsigned long &equation_number(const unsigned variable_index) {return Equation_number[variable_index];}
+
+  /// Read-access returns the equation number of an specific variable
+  /// in the node
+  inline unsigned long equation_number(const unsigned variable_index) const {return Equation_number[variable_index];}
   
  protected:
   
@@ -170,6 +178,9 @@ namespace scicellxx
   
   /// Store the values of the variables stored in the node
   CCData U;
+  
+  /// Store the associated equation number for each variable in the node
+  std::vector<unsigned long> Equation_number;
   
  };
  

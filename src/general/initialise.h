@@ -44,6 +44,17 @@ namespace scicellxx
  /// Finalise function, call all finalisation methods, free memory
  /// allocated by scicellxx
  bool finalise_scicellxx();
+
+#ifdef SCICELLXX_USES_MPI
+ /// Initialise MPI
+ bool initialise_MPI();
+ 
+ /// Finalise MPI
+ bool finalise_MPI();
+#endif // #ifdef SCICELLXX_USES_MPI
+ 
+ /// Print compiler version information
+ void print_compiler_version_information();
  
 }
 

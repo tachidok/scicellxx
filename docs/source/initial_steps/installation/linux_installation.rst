@@ -75,8 +75,15 @@ and hardware resources in your machine.
    
    If you use `Spack <https://spack.readthedocs.io/en/latest/>`_ as
    your software package manager we provide you with our spack
-   :download:`file <./spack.yaml>`. Feel free to use it to ease the
-   installation process and skip this section.
+   :download:`file <./spack.yaml>` (tested with spack version
+   0.16.0). Feel free to use it to ease the installation process and
+   skip this section.
+
+   .. code-block:: shell
+
+                   spack env create myenv spack.yaml
+                   spack env activate -p myenv
+                   spack end deactivate
 
 Overview
 --------

@@ -73,7 +73,39 @@ namespace scicellxx
   extern std::stringstream* Exception_stringstream_pt;
 
  }
+ 
+ //=======================================================================
+ /// Helper namespace for file system operations -- mainly used to
+ /// create the RESLT folder
+ ///======================================================================
+ namespace SciCellxxFileSystem
+ {
+  // Check whether a given directory exists
+  bool directory_exists(std::string &directory_name);
 
+  // Create a directory
+  bool create_directory(std::string &directory_name);
+ }
+
+#ifdef SCICELLXX_USES_MPI
+ //=======================================================================
+ /// Helper namespace for MPI variables
+ //=======================================================================
+ namespace SciCellxxMPI
+ {
+  // Store the MPI communicator
+  extern MPI_Comm comm;
+  
+  // Store the number of processors on MPI_WORLD
+  extern int nprocs;
+  // Store the rank of this process
+  extern int rank;
+  
+  // Store the master core number
+  extern int master_core;
+ }
+#endif // #ifdef SCICELLXX_USES_MPI
+ 
  //=====================================================================
  /// Run-time exception handling  (error and warning).
  ///
@@ -288,6 +320,162 @@ namespace scicellxx
                                     clock_t &final_cpu_time)
   {return
     static_cast<double>(final_cpu_time-initial_cpu_time)/CLOCKS_PER_SEC;}
+  
+ }
+
+  //=======================================================================
+ /// Helper namespace to generate the catesian product of multiple
+ // /vectors
+ ///======================================================================
+ namespace SciCellxxCartesianProduct
+ {
+  // Print the cartesian product of the vectors
+  template<class DATA_TYPE>
+  void print(const std::vector<std::vector<DATA_TYPE> >& v)
+  {
+   scicellxx_output << "{ ";
+   for (const auto& p : v) {
+    scicellxx_output << "(";
+    for (const auto& e : p) {
+     scicellxx_output << e << " ";
+    }
+    scicellxx_output << ") ," << std::endl;
+   }
+   scicellxx_output << "}" << std::endl;
+  }
+  
+  // Compute the cartesian product of a set of vectors
+  template<class DATA_TYPE>
+  std::vector<std::vector<DATA_TYPE> > product(const std::vector<std::vector<DATA_TYPE> >& lists)
+  {
+   std::vector<std::vector<DATA_TYPE> > result;
+   if (std::find_if(std::begin(lists), std::end(lists), 
+                    [](auto e) -> bool { return e.size() == 0; }) != std::end(lists))
+    {
+     return result;
+    }
+   
+   for (auto& e : lists[0])
+    {
+    result.push_back({ e });
+    }
+   
+   for (size_t i = 1; i < lists.size(); ++i)
+    {
+     std::vector<std::vector<DATA_TYPE>> temp;
+     for (auto& e : result)
+      {
+      for (auto f : lists[i])
+       {
+        auto e_tmp = e;
+        e_tmp.push_back(f);
+        temp.push_back(e_tmp);
+       }
+      }
+     result = temp;
+    }
+   return result;
+  }
+  
+  /*  
+  int main() {
+   std::vector<std::vector<int>> prods[] = {
+    { { 1, 2 }, { 3, 4 } },
+    { { 3, 4 }, { 1, 2} },
+    { { 1, 2 }, { } },
+    { { }, { 1, 2 } },
+    { { 1776, 1789 }, { 7, 12 }, { 4, 14, 23 }, { 0, 1 } },
+    { { 1, 2, 3 }, { 30 }, { 500, 100 } },
+    { { 1, 2, 3 }, { }, { 500, 100 } }
+   };
+   for (const auto& p : prods) {
+    print(product(p));
+   }
+   std::cin.ignore();
+   std::cin.get();
+   return 0;
+  }
+  */
+  
+ }
+
+ //=======================================================================
+ /// Helper namespace to a linearspace in the range [min_value,
+ /// max_value] with the specified number of points
+ ///======================================================================
+ namespace SciCellxxLinearSpace
+ {
+  // Create a linear space with Real values
+  template<class DATA_TYPE>
+  void create_linear_space(std::vector<DATA_TYPE> &linear_space,
+                           const DATA_TYPE min_value, const DATA_TYPE max_value,
+                           const DATA_TYPE step, const unsigned n_points)
+  {
+   DATA_TYPE ival = min_value;
+   for (unsigned i = 0; i < n_points; i++)
+    {
+     linear_space.push_back(ival);
+     ival+=step;
+    }
+   
+  }
+  
+  // Print the linear space (unsigned)
+  template<class DATA_TYPE>
+  void print_linear_space(std::vector<DATA_TYPE> &linear_space)
+  {
+   // Get the number of elements
+   const unsigned n_ele = linear_space.size();
+   // Print them
+   scicellxx_output << "[";
+   for (unsigned i = 0; i < n_ele-1; i++)
+    {
+     scicellxx_output << linear_space[i] << ",";
+    }
+   scicellxx_output << linear_space[n_ele-1] << "]" << std::endl;
+   
+  }
+  
+ }
+ 
+ //=======================================================================
+ /// Helper namespace to compute statistics from certain data structures
+ ///======================================================================
+ namespace SciCellxxStatistics
+ {
+  // Computes statistics for a std::vector
+  template<class DATA_TYPE>
+  void statistics_mean_std_median(std::vector<DATA_TYPE> &v, Real &mean, Real &stdev, DATA_TYPE &median)
+  {
+   // Vector size
+   const unsigned v_size = v.size();
+   // Mean
+   const Real sum = std::accumulate(v.begin(), v.end(), 0.0);
+   mean = sum / Real(v_size);
+
+   // Standard deviation
+   std::vector<DATA_TYPE> diff(v_size);
+   //std::transform(v.begin(), v.end(), diff.begin(),
+   //               std::bind2nd(std::minus<double>(), mean));
+   std::transform(v.begin(), v.end(), diff.begin(), [mean](DATA_TYPE x) { return x - mean; });
+   const Real sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+   stdev = std::sqrt(sq_sum / Real(v_size));
+
+   // Median
+   median = v[std::floor(v_size/2)];
+  }
+  
+  // Computes mean for a std::vector
+  template<class DATA_TYPE>
+  void statistics_mean(std::vector<DATA_TYPE> &v, Real &mean)
+  {
+   // Vector size
+   const unsigned v_size = v.size();
+   // Mean
+   const Real sum = std::accumulate(v.begin(), v.end(), 0.0);
+   mean = sum / Real(v_size);
+   
+  }
   
  }
  

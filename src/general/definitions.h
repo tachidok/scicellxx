@@ -37,9 +37,19 @@ namespace scicellxx
 
 #ifdef TYPEDEF_REAL_IS_DOUBLE
  typedef double Real;
+#ifdef SCICELLXX_USES_MPI
+#define MPI_SC_REAL MPI_DOUBLE
+#endif // #ifdef SCICELLXX_USES_MPI
 #else
  typedef float Real;
+#ifdef SCICELLXX_USES_MPI
+#define MPI_SC_REAL MPI_FLOAT
+#endif // #ifdef SCICELLXX_USES_MPI
 #endif // #ifdef TYPEDEF_REAL_IS_DOUBLE
+
+#ifdef SCICELLXX_USES_MPI
+#define MPI_RANK_NPROCS_PRINT(RANK,NPROCS) "["<<RANK<<"/"<<NPROCS<<"]: "
+#endif // #ifdef SCICELLXX_USES_MPI
  
 #ifdef SCICELLXX_PANIC_MODE
  // =======================================================================

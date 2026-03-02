@@ -106,7 +106,9 @@ int main(int argc, char *argv[])
   output_test << "Error linear interpolation: " << std::endl;
   for (unsigned i = 0; i < n_interpolated_data; i++)
    {
+#ifdef SCICELLXX_PANIC_MODE
     DEB_TO_FILE3(deb, x_to_interpolate[i], fx_linear[i], f(x_to_interpolate[i]));
+#endif // #ifdef SCICELLXX_PANIC_MODE
     error[i]=std::fabs(fx_linear[i]-f(x_to_interpolate[i]));
     if (error[i]>max_linear_error)
      {

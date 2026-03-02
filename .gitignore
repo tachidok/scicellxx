@@ -344,6 +344,7 @@ install_manifest.txt
 # This requires a '\' because the first character is a #
 \#*\#
 .#*
+*.~undo-tree~
 
 # ==============================================================
 # Visual Studio

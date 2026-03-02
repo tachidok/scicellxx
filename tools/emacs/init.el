@@ -122,7 +122,14 @@
   :config
   (message "git-timemachine ... [DONE]")
   )
- 
+
+;;;
+(use-package julia-mode
+  :ensure t
+  :config
+  (message "julia-mode ... [DONE]")
+  )
+
 ;;; Latex (using auctex)
 (use-package tex
   :ensure auctex
@@ -354,6 +361,8 @@
 (use-package iedit
   :ensure t
   :config
+  (global-set-key (kbd "C-'") 'iedit-mode)
+  (global-set-key (kbd "M-'") 'iedit--quit)
   (message "iedit ... [DONE]"))
 
 ;;;(message "helm-config ...")
@@ -516,12 +525,12 @@
  '(doc-view-continuous t)
  '(font-use-system-font t)
  '(indent-tabs-mode nil)
+ '(ispell-dictionary nil)
  '(mouse-wheel-progressive-speed nil)
- '(mouse-wheel-scroll-amount (quote (1 ((shift) . 1) ((control)))))
+ '(mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control))))
  '(package-selected-packages
-   (quote
-    (try web-mode git-timemachine elpy cmake-font-lock cmake-mode geben-helm-projectile iedit expand-region aggressive-indent flycheck company-c-headers company-irony dumb-jump ggtags markdown-mode gnuplot-mode counsel-projectile projectile auctex magit counsel undo-tree org-bullets ace-window which-key use-package)))
- '(text-mode-hook (quote (turn-on-auto-fill text-mode-hook-identify))))
+   '(julia-mode company-auctex gnuplot try web-mode git-timemachine elpy cmake-font-lock cmake-mode iedit expand-region company-c-headers company-irony dumb-jump ggtags markdown-mode counsel-projectile projectile auctex magit counsel undo-tree org-bullets ace-window which-key use-package))
+ '(text-mode-hook '(turn-on-auto-fill text-mode-hook-identify)))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.

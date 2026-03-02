@@ -100,15 +100,6 @@ namespace scicellxx
   /// Read-only access to the current time step
   Real time_step(const unsigned i = 0) const;
   
-  /// Get access to the U vector
-  CCData *u_pt() const {return U_pt;}
-  
-  /// Read-only access to the vector U values
-  inline const Real u(const unsigned i, const unsigned t = 0) const {return U_pt->value(i,t);}
-  
-  /// Write access to the vector U values
-  inline Real &u(const unsigned i, const unsigned t = 0) {return U_pt->value(i,t);}
-      
  protected:
   
   /// Copy constructor (we do not want this class to be
@@ -156,13 +147,6 @@ namespace scicellxx
   
   /// The time step vector (each time stepper has an associated time step)
   std::vector<Real> Time_step;
-  
-  /// The storage for the approximated solution of the time integration
-  /// of the equations
-  CCData *U_pt;
-  
-  /// Flag to allow release of memory by the class
-  bool Allow_free_memory_for_U;
   
   /// The equations
   EQUATIONS_TYPE *Equations_pt;

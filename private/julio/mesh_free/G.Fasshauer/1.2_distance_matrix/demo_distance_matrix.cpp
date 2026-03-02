@@ -38,22 +38,10 @@
 
 using namespace scicellxx;
 
-template<class MAT_TYPE, class VEC_TYPE>
-class Problem
-{
-public:
- Problem();
- ~Problem();
- 
- void initialise_problem();
- void configure_problem();
- void solve_problem();
- void document_solution();
-};
-
 // This fucntion has it maximum value at the center, depending on the
 // dimension s. At the boundaries it is zero.
-const Real test_function(ACVector *x_pt, const unsigned s)
+template <class VECTOR_TYPE>
+const Real test_function(VECTOR_TYPE *x_pt, const unsigned s)
 {
  Real prod=1.0;
  for (unsigned i = 0; i < s; i++)
@@ -64,57 +52,453 @@ const Real test_function(ACVector *x_pt, const unsigned s)
  return pow(4, s)*prod;
 }
 
-void compute_distance_matrix(ACMatrix *data_sites_pt, ACMatrix *centers_pt,
-                             ACMatrix *distance_matrix_pt)
+// The problem class
+template <class MATRIX_TYPE, class VECTOR_TYPE>
+class CCDistanceMatrixProblem : public virtual ACProblem
 {
- // Get the number of "vector points" on "data_sites_pt"
- // Get the number of "vector points" on "centers_pt"
- const unsigned n_vector_points_data_sites = data_sites_pt->n_columns();
- const unsigned n_vector_points_centers = centers_pt->n_columns();
+public:
 
- // The dimension of input vector points must be the same, otherwise
- // there is an error
- const unsigned dimension = data_sites_pt->n_rows();
- const unsigned tmp_dimension = centers_pt->n_rows();
+ /// Constructor
+ CCDistanceMatrixProblem(const unsigned dim, const unsigned degree, const unsigned n_evaluation_points_per_dimension)
+  : ACProblem(dim),
+    Degree(degree),
+    L(1), // One-dimensional lenght
+    N_nodes_per_dim(std::pow(2, degree+1)),
+    N_evaluation_points_per_dimension(n_evaluation_points_per_dimension)
+    
+ {
+  const unsigned long nnodes = std::pow(N_nodes_per_dim, dim);
+  
+  // Allocate memory for Nodes_pt vector
+  Nodes_pt.resize(nnodes);  
+ }
+ 
+  /// Destructor
+ ~CCDistanceMatrixProblem()
+ {
+  // Get the number of nodes
+  const unsigned long nnodes = this->n_nodes();
+  
+  // --------------------------------------------------------------
+  // Delete nodes storage
+  // --------------------------------------------------------------
+  for (unsigned long i = 0; i < nnodes; i++)
+   {
+    delete node_pt(i);
+   }
+ }
+ 
+ // Complete the setup of the problem
+ void complete_problem_setup()
+ {
+  // Create nodes and assign position
+  bool random_positions = true;
+  create_nodes(random_positions);
+  
+  // Set initial conditions
+  set_initial_conditions();
+  
+  const unsigned long n_eq = this->assign_equations_number();
+  
+  // Initialise u
+  this->initialise_u(n_eq);
+  
+ }
+ 
+ // Set initial conditions
+ void set_initial_conditions()
+ {
+  // Get the number of nodes
+  const unsigned long nnodes = this->n_nodes();
+  
+  // Get the number of variables per node
+  const unsigned n_variables = node_pt(0)->n_variables();
+  for (unsigned long i = 0; i < nnodes; i++)
+   {
+    // All variables to zero
+    const Real u = 0.0;
+    for (unsigned j = 0; j < n_variables; j++)
+     {
+      node_pt(i)->set_variable(u, j);
+     }
+   }
+  
+ }
+ 
+ // Solve the problem
+ void solve()
+ {  
+  // Create a matrix representation of the nodes with their space-position
+  
+  // Get the number of nodes
+  const unsigned long nnodes = this->n_nodes();
+  
+  // Get the dimension of the nodes in the problem
+  const unsigned dimension = this->dim();
+  
+  // --------------------------------------------------------------
+  // Loop over the nodes and extract their position and store them in
+  // a matrix
+  // --------------------------------------------------------------
+  MATRIX_TYPE *nodes_matrix_position_pt =
+   Factory_matrices_and_vectors.create_matrix(dimension, nnodes);
+  // Each column stores the vector position of a node
+  for (unsigned long i = 0; i < nnodes; i++)
+   {
+    // Cache i-th node position
+    CCData position = node_pt(i)->x();
+    
+    for (unsigned j = 0; j < dimension; j++)
+     {
+      // Get the j-th dimensional position
+      const Real pos = position(j);
+      // Store its position on a vector
+      nodes_matrix_position_pt->set_value(j, i, pos);
+     }
+    
+   }
+ 
+  // -------------------------------------------------------------- 
+  // Create the distance matrix
+  // --------------------------------------------------------------
+  MATRIX_TYPE *distance_matrix_pt =
+   Factory_matrices_and_vectors.create_matrix(nnodes, nnodes);
+  
+  // --------------------------------------------------------------
+  // Generate the distance matrix using the nodes position centers
+  // shifted by the same nodes position
+  // --------------------------------------------------------------
+  compute_distance_matrix(nodes_matrix_position_pt,
+                          nodes_matrix_position_pt,
+                          distance_matrix_pt);
+  
+  // --------------------------------------------------------------
+  // Set right-hand side
+  // --------------------------------------------------------------
+  VECTOR_TYPE *rhs_pt = Factory_matrices_and_vectors.create_vector(nnodes);
+  VECTOR_TYPE *tmp_v_pt = Factory_matrices_and_vectors.create_vector(dimension);
+  for (unsigned long i = 0; i < nnodes; i++)
+   {
+    // Cache i-th node position
+    CCData position = node_pt(i)->x();
+    for (unsigned j = 0; j < dimension; j++)
+     {
+      const Real pos = position(j);
+      tmp_v_pt->set_value(j, pos);
+     }
+    // --------------------------------------------------------------
+    // Evaluate the KNOWN function at the centers positions
+    // --------------------------------------------------------------
+    const Real test_function_value = test_function<VECTOR_TYPE>(tmp_v_pt, dimension);
+    rhs_pt->set_value(i, test_function_value);
+   }
+  
+  // The solution vector (with the respective number of rows) stores
+  // the coefficients for the interpolant polynomials
+  VECTOR_TYPE *sol_pt = Factory_matrices_and_vectors.create_vector(nnodes);
+  
+  // --------------------------------------------------------------
+  // Solve
+  // -------------------------------------------------------------- 
+  // Create the linear solver
+  ACLinearSolver *linear_solver_pt = Factory_linear_solver.create_linear_solver();
+  
+  //std::cerr << "Distance matrix" << std::endl;
+  //distance_matrix.print();
+  
+  // --------------------------------------------------------------
+  // Solve the system of equations
+  // --------------------------------------------------------------
+  linear_solver_pt->solve(distance_matrix_pt, rhs_pt, sol_pt);
+  //std::cerr << "Solution vector" << std::endl;
+  //sol.print();
+  
+ }
+ 
+ /// Documento the solution of the problem
+ void document_solution()
+ {
+  // --------------------------------------------------------------
+  // --------------------------------------------------------------
+  // EVALUATION STAGE
+  // --------------------------------------------------------------
+  // --------------------------------------------------------------
+  std::cerr << "\nEVALUATION\n" << std::endl;
+  
+  // Get the dimension of the problem
+  const unsigned dimension = this->dim();
+  // Get the number of nodes in the problem
+  const unsigned long nnodes = this->n_nodes();
+  
+  // Generate matrix with positions of nodes in the problem
+  MATRIX_TYPE *nodes_matrix_position_pt =
+   Factory_matrices_and_vectors.create_matrix(dimension, nnodes);
+  
+  // Each column stores the vector position of a node
+  for (unsigned long i = 0; i < nnodes; i++)
+   {
+    // Cache i-th node position
+    CCData position = node_pt(i)->x();
+    
+    for (unsigned j = 0; j < dimension; j++)
+     {
+      // Get the j-th dimensional position
+      const Real pos = position(j);
+      // Store its position on a vector
+      nodes_matrix_position_pt->set_value(j, i, pos);
+     }
+    
+   }
+  
+  // --------------------------------------------------------------
+  // Evaluate (compute error RMSE)
+  // --------------------------------------------------------------
+  const unsigned n_data_in_evaluation_points = pow(N_evaluation_points_per_dimension, dimension);
+  // Distance between a pair of nodes
+  const Real h_test = L / (Real)(N_evaluation_points_per_dimension - 1);
+ 
+  // Compute approximated solution at new positions
+  MATRIX_TYPE *approx_solution_position_pt = Factory_matrices_and_vectors->create_matrix(dimension, N_evaluation_points_per_dimension);
+  // --------------------------------------------------------------
+  // Assign positions
+  // --------------------------------------------------------------
+  std::vector<Real> x_eval(dimension, 0.0);
+  for (unsigned i = 0; i < N_evaluation_points_per_dimension; i++)
+   {
+    for (unsigned k = 0; k < dimension; k++)
+     {
+      const Real r = rand();
+      const Real position = static_cast<Real>(r / RAND_MAX) * L;
+      // Generate position and assign it
+      //const Real position = x_eval[k];
+      approx_solution_position_pt->set_value(k, i, position);
+      //x_eval[k]+=h_test;
+     }
+   }
+  
+  // Compute distance matrix with new positions
+  MATRIX_TYPE *approx_distance_matrix_pt = Factory_matrices_and_vectors->create_matrix(N_evaluation_points_per_dimension, n_nodes);
+  // --------------------------------------------------------------
+  // Generate the distance matrix using the nodes position centers
+  // shifted by the new positions
+  // --------------------------------------------------------------
+  compute_distance_matrix(approx_solution_position_pt, nodes_matrix_position_pt, approx_distance_matrix_pt);
+  
+  // Approximated solution
+  VECTOR_TYPE *approx_sol_pt = Factory_matrices_and_vectors->create_vector(N_evaluation_points_per_dimension);
 
- if (dimension != tmp_dimension)
-  {
-   // Error message
-   std::ostringstream error_message;
-   error_message << "The dimensions of the data sites vector and the\n"
-                 << "centers vector are different\n"
-                 << "dim(data_site):" << dimension
-                 << "\ndim(centers):" << tmp_dimension
-                 << std::endl;
-   throw SciCellxxLibError(error_message.str(),
-                          SCICELLXX_CURRENT_FUNCTION,
-                          SCICELLXX_EXCEPTION_LOCATION);
-  }
+  // HERE HERE HERE
+  // Approximate solution at given points
+  multiply_matrix_times_vector(approx_distance_matrix_pt, sol_pt, approx_sol_pt);
+  //(*approx_sol_pt) = (*approx_distance_matrix_pt) * (*sol_pt);
+  //approx_distance_matrix_pt->multiply by vector
+ 
+  // --------------------------------------------------------------
+  // Output data for plotting
+  // --------------------------------------------------------------
+  std::ostringstream filename;
+  filename << "RESLT/soln" << std::setfill('0') << std::setw(2) << this->output_file_index()++ << ".dat";
+  std::ofstream output_file(filename);
+  for (unsigned i = 0; i < N_evaluation_points_per_dimension; i++)
+   {
+    for (unsigned k = 0; k < dimension; k++)
+     {
+      output_file << approx_solution_position(k, i) << " ";
+     }
+    output_file << approx_sol(i) << std::endl;
+   }
+  
+  // Close output file
+  output_file.close();  
+ }
+ 
+ /// Document the error of the solution
+ void document_error()
+ {
+  // --------------------------------------------------------------
+  // Get real solution at given points and get the error 
+  // --------------------------------------------------------------
+  VECTOR_TYPE real_sol(N_evaluation_points_per_dimension);
+  
+  // Get the dimension of the problem
+  const unsigned dimension = this->dim();
+  
+  // Compute the solution at each position of the approximate solution
+  for (unsigned i = 0; i < N_evaluation_points_per_dimension; i++)
+   {
+    VECTOR_TYPE tmp_v(dimension);
+    //tmp_v.allocate_memory();
+    for (unsigned j = 0; j < dimension; j++)
+     {
+      tmp_v(j) = approx_solution_position(j, i);
+     }
+    // ------------------------
+    // Evaluation at approx_solution_position
+    real_sol(i) = test_function<VECTOR_TYPE>(tmp_v, dim);
+   }
+  
+  // --------------------------------------------------------------
+  // Compute error
+  // --------------------------------------------------------------
+  VECTOR_TYPE error(N_evaluation_points_per_dimension);
+  std::cerr << "ERRORS" << std::endl;
+  for (unsigned i = 0; i < n_evaluation_points_per_dimension; i++)
+   {
+    error(i) = real_sol(i) - approx_sol(i);
+    std::cerr << i << ": " << std::fabs(error(i)) << std::endl;
+    std::cerr << i << ": " << real_sol(i) << ":" << approx_sol(i) << std::endl;
+   }
+  
+  const Real rms_error = error.norm_2() / sqrt(n_data_in_evaluation_points);
+ 
+  // --------------------------------------------------------------
+  // Output error
+  // --------------------------------------------------------------
+  std::ofstream error_file(std::string("RESLT/error.dat"));
+  for (unsigned i = 0; i < n_evaluation_points_per_dimension; i++)
+   {
+    for (unsigned k = 0; k < dim; k++)
+     {
+      error_file << approx_solution_position(k, i) << " ";
+     }
+    error_file << error(i) << std::endl;
+   }
+ 
+  // Close error file
+  error_file.close();
+ }
+ 
+private:
+
+ /// Copy constructor (we do not want this class to be
+ /// copiable). Check
+ /// http://www.learncpp.com/cpp-tutorial/912-shallow-vs-deep-copying/
+ CCDistanceMatrixProblem(const CCDistanceMatrixProblem &copy)
+  : ACProblem()
+ {
+  BrokenCopy::broken_copy("CCDistanceMatrixProblem");
+ }
+ 
+ /// Assignment operator (we do not want this class to be
+ /// copiable. Check
+ /// http://www.learncpp.com/cpp-tutorial/912-shallow-vs-deep-copying/
+ void operator=(const CCDistanceMatrixProblem &copy)
+ {
+  BrokenCopy::broken_assign("CCDistanceMatrixProblem");
+ }
+ 
+ // Create nodes, assign dimension, number of variables per node, and
+ // number of history values per node
+ void create_nodes(bool random_position = true)
+ {
+  // Number of variables stored in each node
+  const unsigned n_variables = 1;
+  // Number of history values per variable
+  const unsigned n_history_values = 1;
+  
+  // Compute the `h` distance just in case random_position was not
+  // selected
+  // Distance between a pair of consecutive nodes
+  const Real h = L / (Real)(N_nodes_per_dim - 1);
+  std::vector<Real> x(Dim, 0.0);
+  
+  // Create the nodes, assign dimension, number of variables and
+  // number of history values per variable
+  for (unsigned long i = 0; i < N_nodes; i++)
+   {
+    Nodes_pt[i] = new CCNode(Dim, n_variables, n_history_values);
+    for (unsigned k = 0; k < Dim; k++)
+     {
+      if (random_position)
+       {
+        const Real r = rand();
+        const Real position = static_cast<Real>(r / RAND_MAX) * L;
+        Nodes_pt[i]->set_position(position, k); 
+       }
+      else
+       {
+        const Real position = x[k];
+        Nodes_pt[i]->set_position(position, k); 
+        x[k]+=h;
+       }
+      
+     }
+    
+   }
+  
+ }
+ 
+ // Compute the distance between nodes in a distance matrix
+ void compute_distance_matrix(MATRIX_TYPE *data_sites_pt, MATRIX_TYPE *centers_pt,
+                              MATRIX_TYPE *distance_matrix_pt)
+ {
+  // Get the number of "vector points" on "data_sites_pt"
+  // Get the number of "vector points" on "centers_pt"
+  const unsigned n_vector_points_data_sites = data_sites_pt->n_columns();
+  const unsigned n_vector_points_centers = centers_pt->n_columns();
+  
+  // The dimension of input vector points must be the same, otherwise
+  // there is an error
+  const unsigned dimension = data_sites_pt->n_rows();
+  const unsigned tmp_dimension = centers_pt->n_rows();
+  
+  if (dimension != tmp_dimension)
+   {
+    // Error message
+    std::ostringstream error_message;
+    error_message << "The dimensions of the data sites vector and the\n"
+                  << "centers vector are different\n"
+                  << "dim(data_site):" << dimension
+                  << "\ndim(centers):" << tmp_dimension
+                  << std::endl;
+    throw SciCellxxLibError(error_message.str(),
+                            SCICELLXX_CURRENT_FUNCTION,
+                            SCICELLXX_EXCEPTION_LOCATION);
+   }
+  
+  VECTOR_TYPE *distance_pt = Factory_matrices_and_vectors->create_vector(dimension);
+  
+  // Loop over all the data points in the first matrix
+  for (unsigned m = 0; m < n_vector_points_data_sites; m++)
+   {
+    // Loop over all the data points in the second matrix
+    for (unsigned n = 0; n < n_vector_points_centers; n++)
+     {
+      // Loop over the elements of both vectors
+      for (unsigned k = 0; k < dimension; k++)
+       {
+        // Distance among points in matrices
+        const Real dis = data_sites_pt->get_value(k, m) - centers_pt->get_value(k, n);
+        distance_pt->set_value(k, dis);
+       }
+      const Real norm2 = distance_pt->norm_2();
+      distance_matrix_pt->set_value(m,n, norm2);
+     }
+   }
+  
+  delete distance_pt;
+  
+ }
+ 
+ // Degree of the interpolant polynomial
+ const unsigned Degree;
+ 
+ // One-dimensional lenght of the domain
+ const unsigned L;
+
+ // Number of node per dimension
+ const unsigned N_nodes_per_dim;
+ 
+ // Number of evaluation points per dimension
+ const unsigned N_evaluation_points_per_dimension;
  
  // A factory to create matrices and vectors
- CCFactoryMatrices factory_matrices_and_vectors;
- ACVector *distance_pt = factory_matrices_and_vectors->create_vector(dimension);
+ CCFactoryMatrices<MATRIX_TYPE, VECTOR_TYPE> Factory_matrices_and_vectors;
  
- // Loop over all the data points in the first matrix
- for (unsigned m = 0; m < n_vector_points_data_sites; m++)
-  {
-   // Loop over all the data points in the second matrix
-   for (unsigned n = 0; n < n_vector_points_centers; n++)
-    {
-     // Loop over the elements of both vectors
-     for (unsigned k = 0; k < dimension; k++)
-      {
-       Real dis = data_sites_pt->get_value(k, m) - centers_pt->get_value(k, n);
-       distance_pt->set_value(k, dis);
-      }
-     Real norm2 = distance_pt->norm_2();
-     distance_matrix_pt->set_value(m,n, norm2);
-    }
-  }
-
- delete distance_pt;
+ // A factory to create the linear solver
+ CCFactoryLinearSolver Factory_linear_solver;
  
-}
+};
 
 struct Args {
  argparse::ArgValue<unsigned> dimension;
@@ -161,6 +545,39 @@ int main(int argc, char *argv[])
  
  // Parse the input arguments
  parser.parse_args(argc, argv);
+ 
+ // Create and initialise the problem
+ CCDistanceMatrixProblem<CCMatrix, CCVector> problem(args.dimension, args.degree);
+
+ // Complete problem setup/create nodes and set initial conditions
+ problem.complete_problem_setup();
+
+ // Document nodes positions
+ problem.document_nodes_positions(std::string("RESLT/nodes.csv"));
+
+ // Solve the problem
+ problem.solve();
+ 
+ // Document the solution
+ problem.document_solution();
+
+ // Document the error
+ problem.documet_error();
+ 
+ // --------------------------------------------------------------
+ // Summary
+ // --------------------------------------------------------------
+ std::cerr << std::endl;
+ std::cerr << "Polynomial degree: " << args.degree << std::endl;
+
+#if 0
+ 
+ std::cerr << "N. nodes per dimension: " << n_nodes_per_dim << std::endl;
+ std::cerr << "N. total nodes: " << n_nodes << std::endl; 
+ std::cerr << "RMS-error: " << rms_error << std::endl;
+ 
+
+ // **************************************************************************
  
  // --------------------------------------------------------------
  // Domain specification
@@ -263,14 +680,14 @@ int main(int argc, char *argv[])
  // Loop over the nodes and extract their position and store them in a
  // matrix
  // --------------------------------------------------------------
- ACMatrix *nodes_position_pt = factory_matrices_and_vectors.create_matrix(dim, n_nodes);
+ ACMatrix *nodes_matrix_position_pt = factory_matrices_and_vectors.create_matrix(dim, n_nodes);
  // Each column stores the vector position of a node
   for (unsigned i = 0; i < n_nodes; i++)
   {
    for (unsigned j = 0; j < dim; j++)
     {
      Real pos = nodes_pt[i]->get_position(j);
-     nodes_position_pt->set_value(j, i, pos);
+     nodes_matrix_position_pt->set_value(j, i, pos);
     }
   }
  
@@ -283,7 +700,7 @@ int main(int argc, char *argv[])
  // shifted by the same nodes position
  // --------------------------------------------------------------
   
-  compute_distance_matrix(nodes_position_pt, nodes_position_pt, distance_matrix_pt);
+  compute_distance_matrix(nodes_matrix_position_pt, nodes_matrix_position_pt, distance_matrix_pt);
   
   // --------------------------------------------------------------
   // Set right-hand side
@@ -300,7 +717,7 @@ int main(int argc, char *argv[])
    // --------------------------------------------------------------
    // Evaluate the KNOWN function at the centers positions
    // --------------------------------------------------------------
-   Real test_function_value = test_function(tmp_v_pt, dim);
+   Real test_function_value = test_function<VECTOR_TYPE>(tmp_v_pt, dim);
    rhs_pt->set_value(i, test_function_value);
   }
  
@@ -374,7 +791,7 @@ int main(int argc, char *argv[])
  // Generate the distance matrix using the nodes position centers
  // shifted by the new positions
  // --------------------------------------------------------------
- compute_distance_matrix(approx_solution_position_pt, nodes_position_pt, approx_distance_matrix_pt);
+ compute_distance_matrix(approx_solution_position_pt, nodes_matrix_position_pt, approx_distance_matrix_pt);
  //approx_distance_matrix.print();
 
  // Approximated solution
@@ -425,7 +842,7 @@ int main(int argc, char *argv[])
     }
    // ------------------------
    // Evaluation at approx_solution_position
-   real_sol(i) = test_function(tmp_v, dim);
+   real_sol(i) = test_function<VECTOR_TYPE>(tmp_v, dim);
   }
  
  // --------------------------------------------------------------
@@ -482,7 +899,7 @@ int main(int argc, char *argv[])
  delete tmp_v_pt;
  delete rhs_pt;
  delete distance_matrix_pt;
- delete nodes_position_pt;
+ delete nodes_matrix_position_pt;
  
  // --------------------------------------------------------------
  // Delete nodes storage
@@ -491,6 +908,8 @@ int main(int argc, char *argv[])
   {
    delete nodes_pt[i];
   }
+
+#endif // #if 0
  
  // Finalise chapcom
  finalise_scicellxx();
