@@ -26,7 +26,7 @@ them. We encourage you to personalise SciCell++ based on your needs
 functionalities.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    initial_steps
    workflows
