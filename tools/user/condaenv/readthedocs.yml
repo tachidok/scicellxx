@@ -1,0 +1,57 @@
+name: readthedocs
+channels:
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - alabaster=0.7.12=py_0
+  - babel=2.9.0=pyhd3eb1b0_0
+  - brotlipy=0.7.0=py39h27cfd23_1003
+  - ca-certificates=2021.1.19=h06a4308_1
+  - certifi=2020.12.5=py39h06a4308_0
+  - cffi=1.14.4=py39h261ae71_0
+  - chardet=4.0.0=py39h06a4308_1003
+  - colorama=0.4.4=pyhd3eb1b0_0
+  - cryptography=3.3.1=py39h3c74f83_0
+  - docutils=0.16=py39h06a4308_1
+  - idna=2.10=py_0
+  - imagesize=1.2.0=py_0
+  - jinja2=2.11.2=py_0
+  - ld_impl_linux-64=2.33.1=h53a641e_7
+  - libedit=3.1.20191231=h14c3975_1
+  - libffi=3.3=he6710b0_2
+  - libgcc-ng=9.1.0=hdf63c60_0
+  - libstdcxx-ng=9.1.0=hdf63c60_0
+  - markupsafe=1.1.1=py39h27cfd23_0
+  - ncurses=6.2=he6710b0_1
+  - openssl=1.1.1k=h27cfd23_0
+  - packaging=20.8=pyhd3eb1b0_0
+  - pip=21.0.1=py39h06a4308_0
+  - pycparser=2.20=py_2
+  - pygments=2.7.3=pyhd3eb1b0_0
+  - pyopenssl=20.0.1=pyhd3eb1b0_1
+  - pyparsing=2.4.7=py_0
+  - pysocks=1.7.1=py39h06a4308_0
+  - python=3.9.1=hdb3f193_2
+  - pytz=2020.5=pyhd3eb1b0_0
+  - readline=8.0=h7b6447c_0
+  - requests=2.25.1=pyhd3eb1b0_0
+  - setuptools=51.0.0=py39h06a4308_2
+  - six=1.15.0=py39h06a4308_0
+  - snowballstemmer=2.0.0=py_0
+  - sphinx=3.4.1=pyhd3eb1b0_0
+  - sphinxcontrib-applehelp=1.0.2=py_0
+  - sphinxcontrib-devhelp=1.0.2=py_0
+  - sphinxcontrib-htmlhelp=1.0.3=py_0
+  - sphinxcontrib-jsmath=1.0.1=py_0
+  - sphinxcontrib-qthelp=1.0.3=py_0
+  - sphinxcontrib-serializinghtml=1.1.4=py_0
+  - sqlite=3.33.0=h62c20be_0
+  - tk=8.6.10=hbc83047_0
+  - tzdata=2020d=h14c3975_0
+  - urllib3=1.26.2=pyhd3eb1b0_0
+  - wheel=0.36.2=pyhd3eb1b0_0
+  - xz=5.2.5=h7b6447c_0
+  - zlib=1.2.11=h7b6447c_3
+  - pip:
+    - sphinx-rtd-theme==0.5.1
+prefix: /home/tachidok/anaconda3/envs/readthedocs
