@@ -1,6 +1,18 @@
 Initial steps
 =============
 
+.. toctree::
+   :maxdepth: 2
+   :numbered:
+
+   initial_steps/installation/dependency_management.rst
+   initial_steps/installation/linux_installation.rst
+   initial_steps/installation/windows_installation.rst
+
+   initial_steps/start_scicellxx_linux.rst
+   initial_steps/start_scicellxx_windows.rst
+
+   
 This document shows you how to :ref:`install
 <installation-label_initial_steps.rst>`, :ref:`start
 <starting_scicellxx_-label_initial_steps.rst>` and :ref:`configure

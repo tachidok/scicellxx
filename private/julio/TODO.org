@@ -3,6 +3,12 @@
 #+AUTHOR: Julio César Pérez Sansalvador
 
 * Backlog
+** The validation file for the demos/mpi/basic_mpi is an empty file
+ * The current validation file is an empty file, it passes the test
+   but it should be replaced by the output of the basic_mpi code and
+   then check for the test to pass. The problem is that we may need to
+   manually set the number of mpi tasks to run the test, since in
+   different computers the maximum number may be different.
 ** Review the use of docker containers in GitHub actions
  * The current workflow in GitHub actions is taking too much time, it
    is currently commented/disabled in the workflow file for GitHub
@@ -24,12 +30,10 @@ https://sinews.siam.org/Details-Page/a-model-to-predict-covid-19-epidemics-with-
  * How to git with SciCell++
  * Update README.md file
 * Working on
+** Re-install docs folder with sphinx
+ * Reinstalled and a new file with the documention on how to reinstall
+   it has been generated in tutorials/create_a_tutorial
 * Reviewing
-** Add tools for code-coverage for branches
- * [x] Check information on codecov.io
- * There is no need to update coverage reports per branch, therefore
-   the option for updating reports in the tools/run_codecov.sh has
-   been commented.
 * Done
 ** Add tools for code-coverage for branches
  * [x] Check information on codecov.io

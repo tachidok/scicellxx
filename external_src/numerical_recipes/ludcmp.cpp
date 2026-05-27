@@ -5,7 +5,7 @@ using namespace std;
 void NR::ludcmp(Mat_IO_DP &a, Vec_O_INT &indx, DP &d)
 {
 	const DP TINY=1.0e-20;
-	int i,imax,j,k;
+	int i,imax=0,j,k;
 	DP big,dum,sum,temp;
 
 	int n=a.nrows();

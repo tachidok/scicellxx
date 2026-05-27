@@ -1,0 +1,50 @@
+spack:
+  concretizer:
+    unify: false
+
+  # Let Spack handle the install tree natively within its own directories
+  # or relative to the environment's view. We removed the hardcoded /opt paths.
+  packages:
+    gcc:
+      externals:
+      - spec: gcc@12.4.0 languages:='c,c++'
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/gcc-12
+            cxx: /usr/bin/g++-12
+      - spec: gcc@13.3.0 languages:='c,c++,fortran'
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/gcc
+            cxx: /usr/bin/g++
+            fortran: /usr/bin/gfortran
+    all:
+      # If you are compiling on a specific supercomputer architecture, Spack
+      # will natively detect it. 'target: [x86_64]' forces generic x86_64.
+      # You can override this dynamically if you want optimizations like AVX512.
+      providers:
+        blas: [openblas, netlib-xblas]
+        lapack: [openblas, netlib-lapack]
+        mpi: [openmpi]
+      variants: +mpi
+
+    # Removed strict version constraints to fetch the latest versions
+    openblas:
+      variants: threads=openmp
+
+  # Omitting specific versions automatically downloads the newest versions Spack supports
+  specs:
+  - armadillo
+  - cmake
+  - gcc
+  - git
+  - openmpi
+  - superlu
+  - vtk
+  - openblas
+  - lcov
+
+  # Generate the view (symlink tree) in the local folder so you don't need root
+  view: ./spack-view

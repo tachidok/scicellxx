@@ -1,6 +1,7 @@
 spack:
-  #concretization: together
-  concretization: separately
+  #concretizer: unify: true
+  concretizer:
+    unify: false
 
   config:
     install_tree: /opt/software

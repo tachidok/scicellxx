@@ -1,5 +1,14 @@
 #! /bin/sh
 
+# Ensure no Conda environment is active
+if [ -n "$CONDA_DEFAULT_ENV" ] || [ -n "$CONDA_PREFIX" ]; then
+    echo "[ERROR] A Conda environment ($CONDA_DEFAULT_ENV) is currently active."
+    echo "To avoid linking errors and compiler conflicts, please deactivate the Conda"
+    echo "environment using 'conda deactivate' before running this script."
+    echo ""
+    exit 1
+fi
+
 #====================================================================
 # A few helper functions
 #====================================================================
