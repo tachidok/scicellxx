@@ -365,6 +365,7 @@ if ! cmake ../ \
      -DSCICELLXX_LIB_TYPE=$lib_type \
      -DSCICELLXX_BUILD_VERSION=$lib_build \
      -DSCICELLXX_BUILD_DEMOS=$build_test_demos \
+     -DSCICELLXX_BUILD_TESTS=$build_test_demos \
      -DSCICELLXX_CONFIGURATION_FILE=$configuration_file \
      -DCMAKE_VERBOSE_MAKEFILE=$verbose \
      -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ; then # Added to create the

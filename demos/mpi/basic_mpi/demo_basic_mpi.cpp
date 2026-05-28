@@ -31,7 +31,8 @@
 //LIC// ====================================================================
 
 /// This demo implements basic MPI features such as message passing,
-/// reduction and all to all send data
+/// reduction, broadcast, gather, and allgather operations, showing
+/// how to use them within SciCell++.
 
 // Include SciCell++ libraries
 #include "../../../src/scicellxx.h"
@@ -41,175 +42,172 @@ using namespace scicellxx;
 
 int main(int argc, const char** argv)
 {
- // Initialise scicellxx
- initialise_scicellxx();
- 
- // Output for testing/validation
- std::ofstream output_test("output_test.dat", std::ios_base::out);
- 
- // Get the number of processors
- const int nprocs = SciCellxxMPI::nprocs;
- 
- // Get the rank of the current processor
- const int my_rank = SciCellxxMPI::rank;
-
- // Cache the communicator
- MPI_Comm comm = SciCellxxMPI::comm;
- 
- // -------------------
- // One-to-one (blocking) communications
- // Review this post on one-to-one MPI communication
- // https://mpitutorial.com/tutorials/mpi-send-and-receive/
- // -------------------
- // Communicate processor zero with processor one
- 
- // Note that these are blocking communications, it means, the sending
- // and receiving cores block their execution until all data has been
- // sent and received
- 
- // Processor zero and one perform an specific task
- int sending_core = 0;
- int receiving_core = 1;
- if (my_rank == sending_core)
-  {
-   int sent_data = my_rank;
-   scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << "Processor: " << my_rank << " sending data ...";
-   MPI_Send(&sent_data, 1, MPI_INT, receiving_core, 0, comm);
-  }
- else if (my_rank == receiving_core)
-  {
-   int received_data = 0;
-   MPI_Status status; // Ignore status
-   MPI_Recv(&received_data, 1, MPI_INT, sending_core, 0, comm, &status);
-   scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << "Processor: " << my_rank << " received data ...";
-  }
- 
- // -------------------
- // Colllective with operations communication
- // Review this post on collective communication with operations
- // https://mpitutorial.com/tutorials/mpi-reduce-and-allreduce/
- // -------------------
- 
- // -------------------
- // Reduce (sum)
- // -------------------
- const int master_core = SciCellxxMPI::master_core;
- 
- int mpi_reduce_sum_on_master_core = 0;
- MPI_Reduce(&my_rank, &mpi_reduce_sum_on_master_core, 1, MPI_INT, MPI_SUM,
-            master_core, comm);
- 
- // On master core, output the value of the sum
- if (my_rank == master_core)
-  {
-   scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << mpi_reduce_sum_on_master_core;
-  }
- 
- // -------------------
- // Reduce (max)
- // -------------------
- int mpi_reduce_max_on_master_core = 0;
- MPI_Reduce(&my_rank, &mpi_reduce_max_on_master_core, 1, MPI_INT, MPI_MAX,
-            master_core, comm);
- 
- // On master core, output the max value
- if (my_rank == master_core)
-  {
-   scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << mpi_reduce_max_on_master_core;
-  }
- 
- // -------------------
- // Reduce (min)
- // -------------------
- int mpi_reduce_min_on_master_core = 0;
- MPI_Reduce(&my_rank, &mpi_reduce_min_on_master_core, 1, MPI_INT, MPI_MIN,
-            master_core, comm);
-
- // On master core, output the min value
- if (my_rank == master_core)
-  {
-   scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << mpi_reduce_min_on_master_core;
-  }
-
- // -------------------
- // Synchronize (wait for all processors to reach this point, and the
- // continue)
- // Review this post synchronization and broadcast (collective communication)
- // https://mpitutorial.com/tutorials/mpi-broadcast-and-collective-communication/
- // -------------------
- scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << "Core: " << my_rank
-                  << " reaching synchronization point" << std::endl;
- MPI_Barrier(comm);
- scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << "Core: " << my_rank
-                  << " passing synchronization point" << std::endl;
-
- // -------------------
- // Report back the results to all processors (broadcast)
- // -------------------
- MPI_Bcast(&mpi_reduce_sum_on_master_core, 1, MPI_INT, master_core, comm);
- MPI_Bcast(&mpi_reduce_max_on_master_core, 1, MPI_INT, master_core, comm);
- MPI_Bcast(&mpi_reduce_min_on_master_core, 1, MPI_INT, master_core, comm);
- 
- // Output results
- scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << mpi_reduce_sum_on_master_core;
- scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << mpi_reduce_max_on_master_core;
- scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << mpi_reduce_min_on_master_core;
+  // Initialise scicellxx
+  initialise_scicellxx();
   
- // -------------------
- // Allgather (collective selective communication)
- // Review this post on collective selective communication
- // https://mpitutorial.com/tutorials/mpi-scatter-gather-and-allgather/
- // -------------------
+  // Get the number of processors
+  const int nprocs = SciCellxxMPI::nprocs;
   
- // Generate a vector with the size of the number of processors
- int *processors_ranks = new int[nprocs];
- 
- // All processors send its rank to each other (AllGather)
- MPI_Allgather(&my_rank, 1, MPI_INT,
-               processors_ranks, 1, MPI_INT,
-               comm);
- 
- for (int i = 0; i < nprocs; i++)
+  // Get the rank of the current processor
+  const int my_rank = SciCellxxMPI::rank;
+
+  // Cache the communicator
+  MPI_Comm comm = SciCellxxMPI::comm;
+  
+  // The master core rank
+  const int master_core = SciCellxxMPI::master_core;
+
+  // We require at least 2 processors for the one-to-one communication demo
+  if (nprocs < 2)
   {
-   scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << processors_ranks[i];
+    if (my_rank == master_core)
+    {
+      std::cerr << "Error: This demo requires at least 2 processors." << std::endl;
+    }
+    finalise_scicellxx();
+    return 1;
   }
- std::cout << std::endl; 
- 
 
- /*
+  // ------------------------------------------------------------------
+  // 1. One-to-one (blocking) communication
+  // ------------------------------------------------------------------
+  int one_to_one_val = 0;
+  if (my_rank == 0)
+  {
+    int sent_data = 42;
+    scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << "Rank 0 sending " << sent_data << " to Rank 1." << std::endl;
+    MPI_Send(&sent_data, 1, MPI_INT, 1, 0, comm);
+    
+    // Wait for response from Rank 1
+    MPI_Status status;
+    MPI_Recv(&one_to_one_val, 1, MPI_INT, 1, 0, comm, &status);
+    scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << "Rank 0 received response " << one_to_one_val << " from Rank 1." << std::endl;
+  }
+  else if (my_rank == 1)
+  {
+    int received_data = 0;
+    MPI_Status status;
+    MPI_Recv(&received_data, 1, MPI_INT, 0, 0, comm, &status);
+    scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << "Rank 1 received " << received_data << " from Rank 0." << std::endl;
+    
+    // Compute received_data * 2 and send it back to Rank 0
+    int response_data = received_data * 2;
+    scicellxx_output << MPI_RANK_NPROCS_PRINT(my_rank, nprocs) << "Rank 1 sending response " << response_data << " back to Rank 0." << std::endl;
+    MPI_Send(&response_data, 1, MPI_INT, 0, 0, comm);
+  }
 
+  // Synchronize before moving to the next section
+  MPI_Barrier(comm);
+
+  // ------------------------------------------------------------------
+  // 2. Collective Reduce operations
+  // ------------------------------------------------------------------
+  int reduce_sum_int = 0;
+  int reduce_max_int = 0;
+  int reduce_min_int = 0;
   
- // Output formating (files names, folders names and output to files)
- const unsigned width_number = 5;
- const char fill_char = '0';
- const unsigned precision_real_values = 4;
+  MPI_Reduce(&my_rank, &reduce_sum_int, 1, MPI_INT, MPI_SUM, master_core, comm);
+  MPI_Reduce(&my_rank, &reduce_max_int, 1, MPI_INT, MPI_MAX, master_core, comm);
+  MPI_Reduce(&my_rank, &reduce_min_int, 1, MPI_INT, MPI_MIN, master_core, comm);
 
+  // Also perform a reduction with Real values to test MPI_SC_REAL
+  Real my_rank_real = static_cast<Real>(my_rank) * 1.5;
+  Real reduce_sum_real = 0.0;
+  MPI_Reduce(&my_rank_real, &reduce_sum_real, 1, MPI_SC_REAL, MPI_SUM, master_core, comm);
 
- 
- // The string stream for the rank (used on output filenames)
- std::ostringstream ss_rank;
- ss_rank << SciCellxxMPI::rank;
+  // Synchronize
+  MPI_Barrier(comm);
 
+  // ------------------------------------------------------------------
+  // 3. Collective Broadcast operation
+  // ------------------------------------------------------------------
+  int broadcast_val = 0;
+  if (my_rank == master_core)
+  {
+    broadcast_val = 100;
+  }
+  
+  // Broadcast the value from master core to all processes
+  MPI_Bcast(&broadcast_val, 1, MPI_INT, master_core, comm);
+  
+  // ------------------------------------------------------------------
+  // 4. Collective Gather operation
+  // ------------------------------------------------------------------
+  // Each processor computes gather_input = broadcast_val + my_rank
+  int gather_input = broadcast_val + my_rank;
+  std::vector<int> gathered_values;
+  if (my_rank == master_core)
+  {
+    gathered_values.resize(nprocs);
+  }
+  
+  MPI_Gather(&gather_input, 1, MPI_INT, gathered_values.data(), 1, MPI_INT, master_core, comm);
 
- 
- std::ostringstream ss;
- ss << std::setw(width_number) << std::setfill(fill_char) << std::to_string(i_simulation_step);
- 
- 
- std::ostringstream ss_alpha;
- ss_alpha << setprecision(precision_real_values) << alpha;
- 
- scicellxx_output << MPI_RANK_NPROCS_PRINT(SciCellxxMPI::rank, SciCellxxMPI::nprocs) << "alpha:" << ss_alpha.str() << std::endl;
- 
- // Close the output for test
- output_test.close();
- 
- */
+  // ------------------------------------------------------------------
+  // 5. Collective Allgather operation
+  // ------------------------------------------------------------------
+  // Each processor contributes allgather_input = my_rank * 10
+  int allgather_input = my_rank * 10;
+  std::vector<int> allgathered_values(nprocs);
+  
+  MPI_Allgather(&allgather_input, 1, MPI_INT, allgathered_values.data(), 1, MPI_INT, comm);
 
- // Finalise scicellxx
- finalise_scicellxx();
- 
- return 0;
- 
+  // ------------------------------------------------------------------
+  // 6. Write results to output_test.dat (only from Master Core)
+  // ------------------------------------------------------------------
+  if (my_rank == master_core)
+  {
+    std::ofstream output_test("output_test.dat", std::ios_base::out);
+    if (output_test.is_open())
+    {
+      output_test << "MPI Basic Demo Results" << std::endl;
+      output_test << "----------------------" << std::endl;
+      output_test << "Number of processors: " << nprocs << std::endl;
+      output_test << "Master core: " << master_core << std::endl;
+      output_test << std::endl;
+
+      output_test << "One-to-one communication:" << std::endl;
+      output_test << "  Rank 0 sent: 42" << std::endl;
+      output_test << "  Rank 1 received and processed: 84" << std::endl;
+      output_test << "  Rank 0 received back: " << one_to_one_val << std::endl;
+      output_test << std::endl;
+
+      output_test << "Reduce operations (Integer Ranks):" << std::endl;
+      output_test << "  Sum of ranks: " << reduce_sum_int << std::endl;
+      output_test << "  Max of ranks: " << reduce_max_int << std::endl;
+      output_test << "  Min of ranks: " << reduce_min_int << std::endl;
+      output_test << std::endl;
+
+      output_test << "Reduce operation (Real Ranks * 1.5):" << std::endl;
+      output_test << "  Sum of real ranks: " << reduce_sum_real << std::endl;
+      output_test << std::endl;
+
+      output_test << "Broadcast and Gather operation:" << std::endl;
+      output_test << "  Broadcasted value: " << broadcast_val << std::endl;
+      output_test << "  Gathered values from all processors:" << std::endl;
+      for (int i = 0; i < nprocs; ++i)
+      {
+        output_test << "    Rank " << i << ": " << gathered_values[i] << std::endl;
+      }
+      output_test << std::endl;
+
+      output_test << "Allgather operation:" << std::endl;
+      output_test << "  Allgathered values across all processors:" << std::endl;
+      for (int i = 0; i < nprocs; ++i)
+      {
+        output_test << "    Rank " << i << ": " << allgathered_values[i] << std::endl;
+      }
+      
+      output_test.close();
+    }
+    else
+    {
+      std::cerr << "Error: Could not open output_test.dat for writing." << std::endl;
+    }
+  }
+
+  // Finalise scicellxx
+  finalise_scicellxx();
+  
+  return 0;
 }
-

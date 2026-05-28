@@ -112,6 +112,11 @@ int main(int argc, char *argv[])
   // Instantiate Real type matrices.
   CCMatrix I(n_rows, n_columns);
   
+  // Feed some data to the matrix (the identity)
+  
+  // Zero-initialize the matrix entries
+  I.fill_with_zeroes();
+  
   // Allocate memory
   //I.allocate_memory();
   
